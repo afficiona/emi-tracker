@@ -28,5 +28,6 @@ Thumbs.db
 
 # Backups and sensitive data
 all_loans.json.backup
+all_loans.json
 .vercel
 .env*.local

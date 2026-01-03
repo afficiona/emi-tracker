@@ -1,33 +1,27 @@
-import { kv } from '@vercel/kv';
 import { encryptData, decryptData } from '../../utils/encryption.js';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from 'redis';
 
 const KV_KEY = 'loans_data';
-const DATA_FILE = path.join(process.cwd(), 'all_loans.json');
-const USE_FILE_FALLBACK = !process.env.KV_REST_API_TOKEN;
+
+let redisClient = null;
+
+async function initRedis() {
+  if (!redisClient) {
+    redisClient = createClient({ url: process.env.REDIS_URL });
+    redisClient.on('error', (err) => console.error('Redis error:', err));
+    await redisClient.connect();
+  }
+  return redisClient;
+}
 
 async function getLoansData() {
-  if (USE_FILE_FALLBACK) {
-    // Local development - use file storage
-    if (fs.existsSync(DATA_FILE)) {
-      return fs.readFileSync(DATA_FILE, 'utf-8');
-    }
-    return null;
-  } else {
-    // Production - use Vercel KV
-    return await kv.get(KV_KEY);
-  }
+  const client = await initRedis();
+  return await client.get(KV_KEY);
 }
 
 async function setLoansData(encryptedData) {
-  if (USE_FILE_FALLBACK) {
-    // Local development - use file storage
-    fs.writeFileSync(DATA_FILE, encryptedData);
-  } else {
-    // Production - use Vercel KV
-    await kv.set(KV_KEY, encryptedData);
-  }
+  const client = await initRedis();
+  await client.set(KV_KEY, encryptedData);
 }
 
 export default async function handler(req, res) {
