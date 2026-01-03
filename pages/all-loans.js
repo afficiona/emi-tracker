@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 import Header from '../components/Header';
+import { getLoans, updateLoans } from '../utils/loansApi';
 
 export default function AllLoans() {
   const [loans, setLoans] = useState([]);
   const [editing, setEditing] = useState({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/loans')
-      .then(res => res.json())
-      .then(data => setLoans(data));
+    getLoans()
+      .then(data => {
+        setLoans(data);
+        setError(null);
+      })
+      .catch(err => {
+        setError('Failed to load loans. Invalid password or corrupted data.');
+        console.error(err);
+      });
   }, []);
 
   const handleChange = (index, field, value) => {
@@ -19,12 +27,14 @@ export default function AllLoans() {
 
   const handleSave = async () => {
     setLoading(true);
-    await fetch('/api/loans', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(loans),
-    });
-    setEditing({});
+    try {
+      await updateLoans(loans);
+      setEditing({});
+      setError(null);
+    } catch (err) {
+      setError('Failed to save loans. Invalid password or corrupted data.');
+      console.error(err);
+    }
     setLoading(false);
   };
 
@@ -33,11 +43,13 @@ export default function AllLoans() {
     setLoans(updatedLoans);
     setEditing({});
     setLoading(true);
-    await fetch('/api/loans', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedLoans),
-    });
+    try {
+      await updateLoans(updatedLoans);
+      setError(null);
+    } catch (err) {
+      setError('Failed to delete loan. Invalid password or corrupted data.');
+      console.error(err);
+    }
     setLoading(false);
   };
 

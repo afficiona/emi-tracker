@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/amapandey/Projects/emi-tracker/styles/globals.css"],"sourcesContent":["body {\n  font-family: Arial, sans-serif;\n  background: #f7f7f7;\n  margin: 0;\n  padding: 0;\n}\n\nh1 {\n  color: #333;\n}\n\nbutton {\n  background: #0070f3;\n  color: white;\n  border: none;\n  padding: 8px 16px;\n  border-radius: 4px;\n  cursor: pointer;\n}\n\nbutton:disabled {\n  background: #ccc;\n  cursor: not-allowed;\n}\n"],"names":[],"mappings":"AAAA;;;;;;;AAOA;;;;AAIA;;;;;;;;;AASA"}}]
-}
