@@ -1,10 +1,9 @@
-import fs from 'fs';
-import path from 'path';
+import { kv } from '@vercel/kv';
 import { encryptData, decryptData } from '../../utils/encryption.js';
 
-const loansFilePath = path.join(process.cwd(), 'all_loans.json');
+const KV_KEY = 'loans_data';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const { password } = req.query;
@@ -13,7 +12,10 @@ export default function handler(req, res) {
         return res.status(400).json({ error: 'Password is required' });
       }
       
-      const encryptedData = fs.readFileSync(loansFilePath, 'utf8');
+      const encryptedData = await kv.get(KV_KEY);
+      if (!encryptedData) {
+        return res.status(200).json([]);
+      }
       const decryptedData = decryptData(encryptedData, password);
       const loans = JSON.parse(decryptedData);
       res.status(200).json(loans);
@@ -31,7 +33,7 @@ export default function handler(req, res) {
       const updatedLoans = req.body;
       const jsonString = JSON.stringify(updatedLoans, null, 2);
       const encryptedData = encryptData(jsonString, password);
-      fs.writeFileSync(loansFilePath, encryptedData);
+      await kv.set(KV_KEY, encryptedData);
       res.status(200).json({ success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update loans.' });
