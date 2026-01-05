@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getLoans, updateLoans } from '../utils/loansApi';
+import Navigation from '../components/Navigation';
 
 function getClosestDate(dueDay) {
   const today = new Date();
@@ -68,13 +69,11 @@ export default function Home() {
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
       <div style={{ maxWidth: 360, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Navigation />
         <div style={{
-          position: 'fixed',
+          position: 'sticky',
           top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
           width: '100%',
-          maxWidth: 360,
           zIndex: 1000,
           background: '#fff',
           boxShadow: '0 2px 8px #ccc',
@@ -85,6 +84,7 @@ export default function Home() {
           fontWeight: 600,
           fontSize: 15,
           gap: 12,
+          marginTop: 16,
         }}>
           <span style={{ fontSize: 15, color: '#333' }}>
             ₹{unpaidEmi.toLocaleString()} / <span style={{ color: '#0070f3', fontWeight: 700 }}>₹{totalEmi.toLocaleString()}</span>
@@ -126,7 +126,7 @@ export default function Home() {
           <button
             onClick={async () => {
               const code = window.prompt('Enter reset code:');
-              if (code === '3722') {
+              if (code === '372237') {
                 const resetLoans = loans.map(loan => ({ ...loan, paid: 0 }));
                 setLoans(resetLoans);
                 setEditing({});
@@ -157,7 +157,7 @@ export default function Home() {
             Reset
           </button>
         </div>
-        <div style={{ padding: '80px 0 0 0', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ padding: '20px 0 0 0', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {/* Removed 'Upcoming EMIs' heading as requested */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 18, width: '100%' }}>
             {sortedDays.map(day => {

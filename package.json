@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@vercel/kv": "latest",
+    "dotenv": "^17.2.3",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",

@@ -27,7 +27,9 @@ dist/
 Thumbs.db
 
 # Backups and sensitive data
-all_loans.json.backup
+Office.json
+Friends.json
 all_loans.json
+upload-*.js
 .vercel
 .env*.local
