@@ -127,16 +127,31 @@ export default function Home() {
             onClick={async () => {
               const code = window.prompt('Enter reset code:');
               if (code === '372237') {
-                const resetLoans = loans.map(loan => ({ ...loan, paid: 0 }));
-                setLoans(resetLoans);
-                setEditing({});
-                setLoading(true);
-                await fetch('/api/loans', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(resetLoans),
-                });
-                setLoading(false);
+                const password = window.prompt('Enter password to confirm reset:');
+                if (password) {
+                  const resetLoans = loans.map(loan => ({ ...loan, paid: 0 }));
+                  setLoans(resetLoans);
+                  setEditing({});
+                  setLoading(true);
+                  try {
+                    const response = await fetch(`/api/loans?password=${encodeURIComponent(password)}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(resetLoans),
+                    });
+                    if (response.ok) {
+                      window.alert('Reset successful! All paid amounts have been cleared.');
+                    } else {
+                      window.alert('Reset failed. Please check your password.');
+                      setLoans(loans);
+                    }
+                  } catch (error) {
+                    console.error('Reset error:', error);
+                    window.alert('Reset failed. Please try again.');
+                    setLoans(loans);
+                  }
+                  setLoading(false);
+                }
               } else if (code !== null) {
                 window.alert('Incorrect code. Reset cancelled.');
               }
