@@ -32,7 +32,7 @@ export default function Home() {
   }, []);
 
   const handlePaidChange = (index, checked) => {
-    setLoans(loans => loans.map((loan, i) => i === index ? { ...loan, paid: checked ? loan.emi : null } : loan));
+    setLoans(loans => loans.map((loan, i) => i === index ? { ...loan, paid: checked ? Number(loan.emi) : null } : loan));
     setEditing(editing => ({ ...editing, [index]: true }));
   };
 
@@ -52,7 +52,7 @@ export default function Home() {
   // Calculate unpaid and total EMI
   const totalEmi = loans.reduce((sum, loan) => sum + (Number(loan.emi) || 0), 0);
   const totalPaid = loans.reduce((sum, loan) => sum + (Number(loan.paid) || 0), 0);
-  const unpaidEmi = totalEmi - totalPaid;
+  const unpaidEmi = Math.max(0, totalEmi - totalPaid);
 
   // Group loans by due_day
   const groups = {};

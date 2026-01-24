@@ -52,17 +52,17 @@ export default function Office() {
 
   const getBoderColor = (index) => {
     const debt = office[index];
-    const paid = debt.Paid || 0;
-    const total = debt.Amt;
+    const paid = Number(debt.Paid) || 0;
+    const total = Number(debt.Amt) || 0;
     
     if (paid >= total) return '#2ecc40'; // Green - fully paid
     if (paid > 0) return '#ff9800'; // Orange - partially paid
     return '#e53935'; // Red - unpaid
   };
 
-  const totalAmt = office.reduce((sum, debt) => sum + (debt.Amt || 0), 0);
-  const totalPaid = office.reduce((sum, debt) => sum + (debt.Paid || 0), 0);
-  const totalUnpaid = totalAmt - totalPaid;
+  const totalAmt = office.reduce((sum, debt) => sum + (Number(debt.Amt) || 0), 0);
+  const totalPaid = office.reduce((sum, debt) => sum + (Number(debt.Paid) || 0), 0);
+  const totalUnpaid = Math.max(0, totalAmt - totalPaid);
 
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -99,8 +99,8 @@ export default function Office() {
         {!loading && office.length > 0 && (
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {office.map((debt, idx) => {
-              const paid = debt.Paid || 0;
-              const remaining = debt.Amt - paid;
+              const paid = Number(debt.Paid) || 0;
+              const remaining = Number(debt.Amt) - paid;
               return (
                 <li key={idx} style={{
                   padding: '12px',
@@ -110,7 +110,7 @@ export default function Office() {
                   border: `2.5px solid ${getBoderColor(idx)}`
                 }}>
                   <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                    {debt.Name}: ₹{debt.Amt}
+                    {debt.Name}: ₹{Number(debt.Amt).toLocaleString()}
                   </div>
                   {debt.Desc && <div style={{ color: '#666', fontSize: 12, marginBottom: 8 }}>{debt.Desc}</div>}
                   <div style={{ fontSize: 12, color: paid >= debt.Amt ? '#2ecc40' : paid > 0 ? '#ff9800' : '#666', marginBottom: 8 }}>

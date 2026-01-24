@@ -12,7 +12,7 @@ const sampleLoansData = [
     "emi": 12065,
     "due_day": 5,
     "source": "hello",
-    "paid": "12065"
+    "paid": 12065
   },
   {
     "name": "Fibe",
