@@ -213,7 +213,7 @@ export default function Home() {
                     fontWeight: 600,
                     fontSize: 15,
                   }}>
-                    <span>Due: {groupDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span>Due: {groupDate.getDate()}</span>
                     {allPaid ? null : (
                       <span style={{ color: '#ff9800', fontWeight: 600 }}>
                         ₹{(groupTotalEmi - groupTotalPaid).toLocaleString()} left
