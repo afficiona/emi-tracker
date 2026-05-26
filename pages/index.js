@@ -243,8 +243,7 @@ export default function Home() {
                               style={{ width: 18, height: 18 }}
                             /> Paid
                           </label>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 4 }}>{loan.name}</div>
-                              &nbsp;&nbsp; {loan.source}
+                          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 4 }}>{loan.name} ({loan.source})</div>
                           <div style={{ fontSize: '1.05rem', color: '#0070f3', marginBottom: 4 }}>₹{Number(loan.emi).toLocaleString()}</div>
                         </div>
                       );
