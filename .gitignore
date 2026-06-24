@@ -9,6 +9,7 @@ yarn-error.log*
 out/
 build/
 dist/
+store/
 
 # Environment variables
 .env
@@ -28,9 +29,6 @@ Thumbs.db
 
 # Backups and sensitive data
 .vercel
-.env*.local
 
-# script inits
-init-loans.js
-init-friends.js
-init-office.js
+# Local seed data (optional to commit — remove this line if you want store/ in git)
+# store/

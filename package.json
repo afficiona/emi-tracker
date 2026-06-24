@@ -2,17 +2,23 @@
   "name": "emi-tracker",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "redis:up": "docker compose up -d",
+    "redis:down": "docker compose down",
+    "db:ping": "node --env-file=.env.local scripts/ping-redis.js",
+    "db:seed": "node --env-file=.env.local scripts/seed-redis.js"
   },
   "dependencies": {
-    "@vercel/kv": "latest",
-    "dotenv": "^17.2.3",
+    "@tailwindcss/postcss": "^4.3.1",
     "next": "latest",
+    "postcss": "^8.5.15",
     "react": "latest",
     "react-dom": "latest",
-    "redis": "^5.10.0"
+    "redis": "^5.10.0",
+    "tailwindcss": "^4.3.1"
   }
 }

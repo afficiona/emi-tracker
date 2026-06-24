@@ -23,22 +23,26 @@ function storePassword(password) {
   }
 }
 
-function promptForPassword(label = 'loans') {
-  return window.prompt(`Enter password to decrypt ${label} data:`);
+function promptForPassword() {
+  return window.prompt('Enter password to access cash flow data:');
 }
 
-async function fetchWithPassword(url, options = {}, password = null, label = 'loans') {
+async function fetchWithPassword(url, options = {}, password = null) {
   let finalPassword = password;
   if (!finalPassword) {
-    const userPassword = promptForPassword(label);
+    const userPassword = promptForPassword();
     if (!userPassword) {
-      throw new Error(`Password is required to access ${label} data`);
+      throw new Error('Password is required to access cash flow data');
     }
     finalPassword = userPassword;
   }
 
-  const getUrl = (pwd) => `${url}?password=${encodeURIComponent(pwd)}`;
-  let response = await fetch(getUrl(finalPassword), options);
+  const appendPassword = (pwd) => {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}password=${encodeURIComponent(pwd)}`;
+  };
+
+  let response = await fetch(appendPassword(finalPassword), options);
 
   if (response.ok) {
     storePassword(finalPassword);
@@ -47,9 +51,9 @@ async function fetchWithPassword(url, options = {}, password = null, label = 'lo
 
   if (response.status === 401) {
     storePassword(null);
-    const userPassword = promptForPassword(label);
+    const userPassword = promptForPassword();
     if (!userPassword) {
-      throw new Error(`Password is required to access ${label} data`);
+      throw new Error('Password is required to access cash flow data');
     }
 
     const retryOptions = { ...options };
@@ -57,7 +61,7 @@ async function fetchWithPassword(url, options = {}, password = null, label = 'lo
       retryOptions.body = options.body;
     }
 
-    response = await fetch(getUrl(userPassword), retryOptions);
+    response = await fetch(appendPassword(userPassword), retryOptions);
     if (!response.ok) {
       throw new Error('Invalid password or corrupted data');
     }
@@ -70,38 +74,32 @@ async function fetchWithPassword(url, options = {}, password = null, label = 'lo
   throw new Error(errorData.error || `API request failed with status ${response.status}`);
 }
 
-export async function getLoans() {
-  const storedPassword = getStoredPassword();
-  const response = await fetchWithPassword('/api/loans', {}, storedPassword, 'loans');
+export async function getCashFlow(password = null) {
+  const storedPassword = password || getStoredPassword();
+  const response = await fetchWithPassword('/api/cashflow', {}, storedPassword);
   return response.json();
 }
 
-export async function updateLoans(loansData) {
-  const storedPassword = getStoredPassword();
+export async function addCashFlow(transaction, password = null) {
+  const storedPassword = password || getStoredPassword();
   const response = await fetchWithPassword(
-    '/api/loans',
+    '/api/cashflow',
     {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(loansData),
+      body: JSON.stringify(transaction),
     },
-    storedPassword,
-    'loans'
+    storedPassword
   );
   return response.json();
 }
 
-export async function resetLoans(resetCode) {
-  const storedPassword = getStoredPassword();
+export async function deleteCashFlow(id, password = null) {
+  const storedPassword = password || getStoredPassword();
   const response = await fetchWithPassword(
-    '/api/loans/reset',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resetCode }),
-    },
-    storedPassword,
-    'loans'
+    `/api/cashflow?id=${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+    storedPassword
   );
   return response.json();
 }

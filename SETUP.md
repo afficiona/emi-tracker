@@ -1,61 +1,61 @@
 # EMI Tracker Setup Guide
 
-This project uses **Redis as the only database**. All data is stored exclusively in Redis - no JSON files are used.
+This project uses **Redis as the only database**. All data is stored as encrypted blobs in Redis.
 
-## Database Setup
+## Data model
 
-### Prerequisites
-- Node.js installed
-- Redis instance running (local or remote)
-- Redis URL available as an environment variable
+Two collections:
 
-### Environment Variables
+| Collection | Redis key | Source file | Description |
+|---|---|---|---|
+| **Loans** | `loans_data` | `store/loans.json` | EMI loans |
+| **Lumpsum** | `lumpsum_data` | `store/lumpsum.json` | Office + Friends debts combined |
 
-Create a `.env.local` file in the project root with the following variables:
-
-```
-REDIS_URL=redis://your-redis-connection-url
-LOANS_PASSWORD=372237
-FRIENDS_PASSWORD=372237
-OFFICE_PASSWORD=372237
-```
-
-### Initialize Redis Database
-
-Before running the application for the first time, initialize the Redis database with sample data:
+## Quick start
 
 ```bash
-# Initialize loans data
-node init-loans.js
+npm install
+cp .env.example .env.local
+# Edit .env.local with your Redis URL and passwords
 
-# Initialize friends debts data
-node init-friends.js
-
-# Initialize office debts data
-node init-office.js
-```
-
-These scripts will encrypt and store the initial data in Redis.
-
-### Running the Application
-
-```bash
-# Development
+npm run db:ping
+npm run db:seed
 npm run dev
-
-# Production build
-npm run build
-npm start
 ```
+
+## Environment variables
+
+```
+REDIS_URL=redis://127.0.0.1:6379
+LOANS_PASSWORD=your-loans-password
+LUMPSUM_PASSWORD=your-lumpsum-password
+```
+
+| Variable | Purpose |
+|---|---|
+| `REDIS_URL` | Redis connection string |
+| `LOANS_PASSWORD` | Encrypts/decrypts loans data |
+| `LUMPSUM_PASSWORD` | Encrypts/decrypts lumpsum data |
+
+`npm run db:seed` falls back to `FRIENDS_PASSWORD` or `OFFICE_PASSWORD` for lumpsum if `LUMPSUM_PASSWORD` is not set (legacy migration).
+
+## NPM scripts
+
+| Script | Description |
+|---|---|
+| `npm run redis:up` | Start local Redis via Docker Compose |
+| `npm run redis:down` | Stop local Redis |
+| `npm run db:ping` | Test Redis connectivity |
+| `npm run db:seed` | Load `store/*.json` into Redis (encrypted) |
+| `npm run dev` | Start Next.js dev server |
 
 ## Architecture
 
-- **Database**: Redis (encrypted data)
-- **API Endpoints**: `/pages/api/loans.js`, `/pages/api/friends.js`, `/pages/api/office.js`
-- **Data Flow**: Browser → Next.js API Routes → Redis
-- **Encryption**: All data is encrypted with the specified passwords before storage
+```
+Browser → /api/loans, /api/lumpsum → lib/encryptedStore.js → lib/redis.js → Redis
+```
 
-## Data Structure
+## Data structures
 
 ### Loans
 ```json
@@ -70,16 +70,27 @@ npm start
 }
 ```
 
-### Office Debts & Friends Debts
+### Lumpsum
 ```json
 {
-  "Name": "Person Name",
-  "Amt": 500000.0,
-  "Paid": 0,
-  "Desc": "Description"
+  "name": "Person Name",
+  "total": 500000,
+  "paid": 0,
+  "desc": "Description",
+  "category": "Office"
 }
 ```
 
-## Modifying Data
+`category` is `"Office"` or `"Friends"` to distinguish the original source.
 
-All data modifications are made through the web interface and automatically synced to Redis. No manual JSON file edits are needed.
+## Vercel deployment
+
+Set `REDIS_URL`, `LOANS_PASSWORD`, and `LUMPSUM_PASSWORD` in Vercel project environment variables, then redeploy.
+
+Pull env vars locally:
+
+```bash
+npx vercel env pull .env.local
+```
+
+After first deploy or schema change, run `npm run db:seed` once to populate Redis.

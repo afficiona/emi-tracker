@@ -23,16 +23,16 @@ function storePassword(password) {
   }
 }
 
-function promptForPassword(label = 'loans') {
-  return window.prompt(`Enter password to decrypt ${label} data:`);
+function promptForPassword() {
+  return window.prompt('Enter password to decrypt lumpsum data:');
 }
 
-async function fetchWithPassword(url, options = {}, password = null, label = 'loans') {
+async function fetchWithPassword(url, options = {}, password = null) {
   let finalPassword = password;
   if (!finalPassword) {
-    const userPassword = promptForPassword(label);
+    const userPassword = promptForPassword();
     if (!userPassword) {
-      throw new Error(`Password is required to access ${label} data`);
+      throw new Error('Password is required to access lumpsum data');
     }
     finalPassword = userPassword;
   }
@@ -47,9 +47,9 @@ async function fetchWithPassword(url, options = {}, password = null, label = 'lo
 
   if (response.status === 401) {
     storePassword(null);
-    const userPassword = promptForPassword(label);
+    const userPassword = promptForPassword();
     if (!userPassword) {
-      throw new Error(`Password is required to access ${label} data`);
+      throw new Error('Password is required to access lumpsum data');
     }
 
     const retryOptions = { ...options };
@@ -67,41 +67,25 @@ async function fetchWithPassword(url, options = {}, password = null, label = 'lo
   }
 
   const errorData = await response.json().catch(() => ({}));
-  throw new Error(errorData.error || `API request failed with status ${response.status}`);
+  throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
 }
 
-export async function getLoans() {
-  const storedPassword = getStoredPassword();
-  const response = await fetchWithPassword('/api/loans', {}, storedPassword, 'loans');
+export async function getLumpsum(password = null) {
+  const storedPassword = password || getStoredPassword();
+  const response = await fetchWithPassword('/api/lumpsum', {}, storedPassword);
   return response.json();
 }
 
-export async function updateLoans(loansData) {
-  const storedPassword = getStoredPassword();
+export async function updateLumpsum(lumpsumData, password = null) {
+  const storedPassword = password || getStoredPassword();
   const response = await fetchWithPassword(
-    '/api/loans',
+    '/api/lumpsum',
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(loansData),
+      body: JSON.stringify(lumpsumData),
     },
-    storedPassword,
-    'loans'
-  );
-  return response.json();
-}
-
-export async function resetLoans(resetCode) {
-  const storedPassword = getStoredPassword();
-  const response = await fetchWithPassword(
-    '/api/loans/reset',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resetCode }),
-    },
-    storedPassword,
-    'loans'
+    storedPassword
   );
   return response.json();
 }
