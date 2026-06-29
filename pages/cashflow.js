@@ -76,6 +76,11 @@ function withUpdatedAt(item, timestamp = new Date().toISOString()) {
   return { ...item, updatedAt: timestamp };
 }
 
+function getListItemName(entry) {
+  if (entry.kind === 'inflow') return entry.item.source || '';
+  return entry.item.name || '';
+}
+
 function formatUpdatedAt(timestampMs) {
   if (!timestampMs) return 'Not updated yet';
   return new Date(timestampMs).toLocaleString('en-IN', {
@@ -249,6 +254,7 @@ export default function CashFlowPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
   const [deletingInflowId, setDeletingInflowId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const expenseOptions = useMemo(() => {
     const loanOptions = loans.map((loan, index) => ({
@@ -299,6 +305,14 @@ export default function CashFlowPage() {
     ];
     return items.sort((a, b) => b.updatedAt - a.updatedAt);
   }, [transactions, loans, lumpsum]);
+
+  const filteredList = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return unifiedList;
+    return unifiedList.filter((entry) =>
+      getListItemName(entry).toLowerCase().includes(query)
+    );
+  }, [unifiedList, searchQuery]);
 
   useEffect(() => {
     if (!form.expenseRef) return;
@@ -643,8 +657,50 @@ export default function CashFlowPage() {
           {unifiedList.length === 0 ? (
             <p className="text-sm text-slate-500">No items found.</p>
           ) : (
+            <>
+              <div className="sticky top-16 z-40 -mx-4 px-4 py-3 sm:-mx-6 sm:px-6">
+                <label className="relative block">
+                  <span className="sr-only">Search by name</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name..."
+                    className="w-full rounded-xl border border-slate-200 bg-white/95 py-2.5 pl-9 pr-9 text-sm shadow-md shadow-slate-200/50 backdrop-blur-md focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="Clear search"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                      </svg>
+                    </button>
+                  )}
+                </label>
+              </div>
+
+              {filteredList.length === 0 ? (
+                <p className="text-sm text-slate-500">No matching items for &ldquo;{searchQuery.trim()}&rdquo;.</p>
+              ) : (
             <ul className="space-y-3">
-              {unifiedList.map((entry) => {
+              {filteredList.map((entry) => {
                 if (entry.kind === 'inflow') {
                   return (
                     <InflowItemCard
@@ -672,6 +728,8 @@ export default function CashFlowPage() {
                 );
               })}
             </ul>
+              )}
+            </>
           )}
         </div>
       )}
