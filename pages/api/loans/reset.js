@@ -1,13 +1,6 @@
-import crypto from 'crypto';
+import { codesMatch } from '../../../lib/accessCode.js';
 import { readEncryptedCollection, writeEncryptedCollection } from '../../../lib/encryptedStore.js';
 import { REDIS_KEYS } from '../../../lib/keys.js';
-
-function codesMatch(provided, expected) {
-  const providedBuf = Buffer.from(provided);
-  const expectedBuf = Buffer.from(expected);
-  if (providedBuf.length !== expectedBuf.length) return false;
-  return crypto.timingSafeEqual(providedBuf, expectedBuf);
-}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

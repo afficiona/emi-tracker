@@ -105,3 +105,15 @@ export async function resetLoans(resetCode) {
   );
   return response.json();
 }
+
+export async function verifyAccessCode(code) {
+  const response = await fetch('/api/loans/verify-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (response.ok) return;
+
+  const errorData = await response.json().catch(() => ({}));
+  throw new Error(errorData.error || `API request failed with status ${response.status}`);
+}

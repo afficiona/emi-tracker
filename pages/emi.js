@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getLoans, updateLoans, resetLoans } from '../utils/loansApi';
+import { getLoans, updateLoans, resetLoans, verifyAccessCode } from '../utils/loansApi';
+
+const EMPTY_NEW_LOAN = { name: '', dueDay: '', emi: '', hidden: false };
+const INPUT_CLASS =
+  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
 function isPaid(loan) {
   return !isClosed(loan) && Number(loan.paid) === Number(loan.emi) && Number(loan.emi) > 0;
@@ -7,6 +11,10 @@ function isPaid(loan) {
 
 function isClosed(loan) {
   return loan.closed === true;
+}
+
+function isHidden(loan) {
+  return loan.hidden === true;
 }
 
 function formatEmi(value) {
@@ -50,9 +58,10 @@ function getGroupTheme(groupPaid, groupEmi) {
   };
 }
 
-function groupLoansByDueDay(loans) {
+function groupLoansByDueDay(loans, isVisible) {
   const groups = {};
   loans.forEach((loan, index) => {
+    if (!isVisible(loan)) return;
     const day = String(loan.due_day);
     if (!groups[day]) groups[day] = [];
     groups[day].push({ ...loan, index });
@@ -82,6 +91,10 @@ export default function EmiPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [dirty, setDirty] = useState(false);
+  // Not persisted: hidden EMIs stay hidden after every refresh until the code is entered again
+  const [showAll, setShowAll] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLoan, setNewLoan] = useState(EMPTY_NEW_LOAN);
 
   useEffect(() => {
     getLoans()
@@ -150,10 +163,58 @@ export default function EmiPage() {
     }
   };
 
-  const activeLoans = loans.filter((loan) => !isClosed(loan));
+  const handleShowAllToggle = async () => {
+    if (showAll) {
+      setShowAll(false);
+      return;
+    }
+    const code = window.prompt('Enter code to show hidden EMIs:');
+    if (code === null) return;
+
+    try {
+      await verifyAccessCode(code);
+      setShowAll(true);
+      setError(null);
+    } catch (err) {
+      window.alert(err.message || 'Incorrect code.');
+    }
+  };
+
+  const handleAddLoan = async (e) => {
+    e.preventDefault();
+    const name = newLoan.name.trim();
+    const dueDay = Number(newLoan.dueDay);
+    const emi = Number(newLoan.emi);
+    if (!name || !Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31 || !(emi > 0)) {
+      window.alert('Enter a name, a due day between 1 and 31, and an amount greater than 0.');
+      return;
+    }
+
+    const updatedLoans = [
+      ...loans,
+      { name, type: 'Self', emi, due_day: dueDay, paid: 0, hidden: newLoan.hidden },
+    ];
+    setSaving(true);
+    try {
+      await updateLoans(updatedLoans);
+      setLoans(updatedLoans);
+      setDirty(false);
+      setNewLoan(EMPTY_NEW_LOAN);
+      setShowAddForm(false);
+      setError(null);
+    } catch (err) {
+      setError('Failed to add EMI. Check your password and try again.');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isVisible = (loan) => showAll || !isHidden(loan);
+  const activeLoans = loans.filter((loan) => isVisible(loan) && !isClosed(loan));
   const totalEmi = activeLoans.reduce((sum, loan) => sum + (Number(loan.emi) || 0), 0);
   const totalPaid = activeLoans.reduce((sum, loan) => sum + (Number(loan.paid) || 0), 0);
-  const groupedLoans = groupLoansByDueDay(loans);
+  const groupedLoans = groupLoansByDueDay(loans, isVisible);
   const progressPercent = totalEmi > 0 ? Math.min(100, (totalPaid / totalEmi) * 100) : 0;
 
   const progressBarColor =
@@ -177,7 +238,14 @@ export default function EmiPage() {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              onClick={() => setShowAddForm((open) => !open)}
+              disabled={saving}
+              className="mr-auto rounded-lg border border-brand-100 bg-white px-4 py-2 text-sm font-semibold text-brand-600 shadow-sm transition-colors hover:bg-brand-50 disabled:opacity-60"
+            >
+              + Add EMI
+            </button>
             {dirty && (
               <button
                 onClick={handleSave}
@@ -194,8 +262,89 @@ export default function EmiPage() {
             >
               Reset
             </button>
+            <button
+              onClick={handleShowAllToggle}
+              disabled={saving}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-60"
+            >
+              {showAll ? 'Hide hidden' : 'Show all'}
+            </button>
           </div>
         </div>
+      )}
+
+      {!loading && !error && loans.length === 0 && !showAddForm && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="rounded-lg border border-brand-100 bg-white px-4 py-2 text-sm font-semibold text-brand-600 shadow-sm transition-colors hover:bg-brand-50"
+          >
+            + Add EMI
+          </button>
+        </div>
+      )}
+
+      {showAddForm && (
+        <form
+          onSubmit={handleAddLoan}
+          className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+        >
+          <input
+            placeholder="Name"
+            value={newLoan.name}
+            onChange={(e) => setNewLoan((l) => ({ ...l, name: e.target.value }))}
+            className={INPUT_CLASS}
+          />
+          <div className="flex gap-3">
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max="31"
+              placeholder="Due day (1-31)"
+              value={newLoan.dueDay}
+              onChange={(e) => setNewLoan((l) => ({ ...l, dueDay: e.target.value }))}
+              className={INPUT_CLASS}
+            />
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              placeholder="Amount"
+              value={newLoan.emi}
+              onChange={(e) => setNewLoan((l) => ({ ...l, emi: e.target.value }))}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={newLoan.hidden}
+              onChange={(e) => setNewLoan((l) => ({ ...l, hidden: e.target.checked }))}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span className="text-sm text-slate-700">Hidden</span>
+          </label>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setNewLoan(EMPTY_NEW_LOAN);
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-60"
+            >
+              {saving ? 'Adding...' : 'Add'}
+            </button>
+          </div>
+        </form>
       )}
 
       {error && (
@@ -260,6 +409,11 @@ export default function EmiPage() {
                           }`}
                         >
                           {loan.name}
+                          {isHidden(loan) && (
+                            <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                              Hidden
+                            </span>
+                          )}
                         </p>
 
                         <p
