@@ -263,13 +263,6 @@ export default function EmiPage() {
             >
               Reset
             </button>
-            <button
-              onClick={handleShowAllToggle}
-              disabled={saving}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-60"
-            >
-              {showAll ? 'Hide hidden' : 'Show all'}
-            </button>
           </div>
         </div>
       )}
@@ -480,6 +473,38 @@ export default function EmiPage() {
               </section>
             );
           })}
+        </div>
+      )}
+
+      {!loading && !error && loans.length > 0 && (
+        <div className="flex justify-center pb-6">
+          <button
+            onClick={handleShowAllToggle}
+            disabled={saving}
+            title={showAll ? 'Hide hidden EMIs' : 'Show all EMIs'}
+            aria-label={showAll ? 'Hide hidden EMIs' : 'Show all EMIs'}
+            aria-pressed={showAll}
+            className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors disabled:opacity-60 ${
+              showAll
+                ? 'border-brand-600 bg-brand-600 text-white hover:bg-brand-700'
+                : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+            }`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
         </div>
       )}
     </div>
