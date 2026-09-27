@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getLoans, updateLoans, resetLoans, verifyAccessCode } from '../utils/loansApi';
 
-const EMPTY_NEW_LOAN = { name: '', dueDay: '', emi: '', hidden: false };
+const LOAN_TYPES = ['Self', 'Other'];
+const EMPTY_NEW_LOAN = { name: '', type: 'Self', dueDay: '', emi: '', hidden: false };
 const INPUT_CLASS =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
@@ -192,7 +193,7 @@ export default function EmiPage() {
 
     const updatedLoans = [
       ...loans,
-      { name, type: 'Self', emi, due_day: dueDay, paid: 0, hidden: newLoan.hidden },
+      { name, type: newLoan.type, emi, due_day: dueDay, paid: 0, hidden: newLoan.hidden },
     ];
     setSaving(true);
     try {
@@ -289,6 +290,22 @@ export default function EmiPage() {
           onSubmit={handleAddLoan}
           className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
         >
+          <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+            {LOAN_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setNewLoan((l) => ({ ...l, type }))}
+                className={`flex-1 rounded-md py-2 text-sm font-semibold transition-colors ${
+                  newLoan.type === type
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {getLoanTypeIcon(type)} {type}
+              </button>
+            ))}
+          </div>
           <input
             placeholder="Name"
             value={newLoan.name}
